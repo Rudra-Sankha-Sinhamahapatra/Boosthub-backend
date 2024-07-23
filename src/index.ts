@@ -16,7 +16,7 @@ app.use(cookieParser());
 app.options('*', cors({
     origin: FRONTEND_URL,
     credentials: true
-}));
+})); 
 
 console.log(`${FRONTEND_URL}`);
 
