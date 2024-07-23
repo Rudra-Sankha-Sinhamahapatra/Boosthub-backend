@@ -13,9 +13,9 @@ const PORT=3001;
 const app=express();
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({
-    origin: '*', 
-    credentials:true
+app.options('*', cors({
+    origin: FRONTEND_URL,
+    credentials: true
 }));
 
 console.log(`${FRONTEND_URL}`);
