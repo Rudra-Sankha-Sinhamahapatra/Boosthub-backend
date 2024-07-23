@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum roleEnum {
+  student
+  creator
+}
+
+model User{
+  id Int @id @default(autoincrement())
+  email String @unique
+  name String? @default("Anonymous")
+  password String
+  role roleEnum @default(student)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  courses Course[]
+  feedbacks Feedback[]
+  comments Comment[]
+  likes Like[]
+  ratings Rating[]
+}
+
+model Course {
+  id Int @id @default(autoincrement())
+  title String
+  description String
+  content String
+  teacher User @relation(fields: [teacherId],references: [id])
+  teacherId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  feedbacks Feedback[]
+  comments Comment[]
+  likes Like[]
+  ratings Rating[]
+}
+
+model Feedback {
+  id Int @id @default(autoincrement())
+  userId Int
+  courseId Int
+  comment String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  user User @relation(fields: [userId],references: [id])
+  course Course @relation(fields: [courseId],references: [id])
+}
+
+model Comment {
+  id Int @id @default(autoincrement())
+  userId Int
+  courseId Int
+  comment String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  user User @relation(fields: [userId],references: [id])
+  course Course @relation(fields: [courseId],references: [id])
+}
+
+model Like {
+id Int @id @default(autoincrement())
+userId Int
+courseId Int
+createdAt DateTime @default(now())
+liked Boolean @default(false)
+user User @relation(fields: [userId],references: [id])
+course Course @relation(fields: [courseId],references: [id])
+
+@@unique([userId,courseId])
+}
+
+model Rating {
+  id Int @id @default(autoincrement())
+  userId Int
+  courseId Int
+  rating Int? @default(0) 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  course Course @relation(fields: [courseId],references: [id])
+  user User @relation(fields: [userId],references: [id])
+
+ @@unique([userId,courseId])
+}
