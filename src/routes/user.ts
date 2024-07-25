@@ -1,9 +1,8 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-import zod from "zod";
+import zod, { date } from "zod";
 import prisma from "../prisma";
 import bcrypt from "bcrypt";
-import { JWT_SECRET, NODE_ENV} from "../conf";
 import { authMiddleware } from "../middleware";
 
 export const Userapp = express.Router();
@@ -17,6 +16,7 @@ const signupBody = zod.object({
 
 Userapp.post("/signup", async (req, res) => {
   const { success } = signupBody.safeParse(req.body);
+  console.log(success)
 
   if (!success) {
     return res.status(401).json({
@@ -54,17 +54,15 @@ Userapp.post("/signup", async (req, res) => {
       },
     });
 
-    const token =  jwt.sign({ id: user.id }, JWT_SECRET);
-    res.cookie("token", token, {
-    httpOnly:true,
-      secure: NODE_ENV === "development" ? false : true,
-      maxAge:15 * 60 * 1000,
-      sameSite: NODE_ENV === 'development' ? 'lax' : 'none',
-      domain: NODE_ENV === 'development' ? 'localhost' :'boost-hub.vercel.app',
-      path:'/'
-    });
-
-    return res.status(200).json({
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET || "secret");
+   
+    res.status(200).cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== "development",
+      maxAge: 15 * 60 * 1000,
+      sameSite: process.env.NODE_ENV === "development" ? "lax" : "none",
+      path: '/'
+    }).json({
       token: token,
       message: "User Created Successfully",
     });
@@ -82,7 +80,7 @@ const signInBody = zod.object({
 });
 
 
-console.log(`${NODE_ENV}`)
+console.log(`${process.env.NODE_ENV}`)
 
 Userapp.post("/login", async (req, res) => {
   const { success } = signInBody.safeParse(req.body);
@@ -102,7 +100,7 @@ Userapp.post("/login", async (req, res) => {
         email: email,
       },
     });
-  
+
     console.log(`${existingUser?.email}`);
 
     if (!existingUser) {
@@ -118,19 +116,18 @@ Userapp.post("/login", async (req, res) => {
       });
     }
 
-    const token =  jwt.sign({ id: existingUser.id }, JWT_SECRET);
+    const token = jwt.sign({ id: existingUser.id }, process.env.JWT_SECRET || "secret");
 
-   console.log(`${token}`)
-    res.cookie("token", token, {
-    httpOnly:true,
-      secure: NODE_ENV === "development" ? false : true,
-      maxAge:15 * 60 * 1000,
-      sameSite: NODE_ENV === 'development' ? 'lax' : 'none',
-        domain: NODE_ENV === 'development' ? 'localhost' :'boost-hub.vercel.app',
-      path:'/'
-    });
+    console.log(`${token}`)
 
-    return res.status(200).json({
+     res.status(200).cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== "development",
+      maxAge: 15 * 60 * 1000,
+      sameSite: process.env.NODE_ENV === "development" ? "lax" : "none",
+      path: '/'
+    })
+    .json({
       token: token,
       message: "Sign In Successful",
     });
@@ -143,34 +140,34 @@ Userapp.post("/login", async (req, res) => {
 });
 
 
-Userapp.post("/logout",authMiddleware,async(req:any,res)=>{
-const userId=req.user.id;
+Userapp.post("/logout", authMiddleware, async (req: any, res) => {
+  const userId = req.user.id;
   try {
- const existingUser=await prisma.user.findUnique({
-  where:{
-    id:userId,
-  },
- });
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
 
- if(!existingUser){
-  return res.status(404).json({
-    message:"User dosent exists"
-  })
- }
+    if (!existingUser) {
+      return res.status(404).json({
+        message: "User dosent exists"
+      })
+    }
 
-res.clearCookie("token");
+    res.clearCookie("token");
 
-return res.status(200).json({
-  message:"Logged out Successfully"
-})
+    return res.status(200).json({
+      message: "Logged out Successfully"
+    })
 
-}
-catch (error){
-  return res.status(500).json({
-    message:"Internal Server Error",
-    error:error
-  })
-}
+  }
+  catch (error) {
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error
+    })
+  }
 })
 
 Userapp.get("/me", async (req, res) => {
@@ -183,7 +180,7 @@ Userapp.get("/me", async (req, res) => {
   }
 
   try {
-    const decodedToken: any = jwt.verify(token, JWT_SECRET);
+    const decodedToken: any = jwt.verify(token, process.env.JWT_SECRET || "secret");
     if (!decodedToken || !decodedToken.id) {
       return res.status(403).json({
         message: "Invalid Token",
@@ -233,99 +230,99 @@ Userapp.get("/me", async (req, res) => {
   }
 });
 
-const updateBody=zod.object({
-  email:zod.string().email(),
-  newemail:zod.string().email().optional(),
-  password:zod.string().min(5).optional(),
-  name:zod.string().min(1).optional(),
-  role:zod.string().optional()
+const updateBody = zod.object({
+  email: zod.string().email(),
+  newemail: zod.string().email().optional(),
+  password: zod.string().min(5).optional(),
+  name: zod.string().min(1).optional(),
+  role: zod.string().optional()
 })
 
-Userapp.put('/update',authMiddleware,async(req,res)=>{
-const {success}=updateBody.safeParse(req.body);
+Userapp.put('/update', authMiddleware, async (req, res) => {
+  const { success } = updateBody.safeParse(req.body);
 
-if(!success){
-  return res.status(401).json({
-    message:"Incorrect Inputs"
-  });
-}
+  if (!success) {
+    return res.status(401).json({
+      message: "Incorrect Inputs"
+    });
+  }
 
-const email=req.body.email;
-const newmail=req.body.newmail;
-const password=req.body.password;
-const name=req.body.name;
-const role=req.body.role;
+  const email = req.body.email;
+  const newmail = req.body.newmail;
+  const password = req.body.password;
+  const name = req.body.name;
+  const role = req.body.role;
 
-try{
-const existingUser=await prisma.user.findUnique({
-  where:{
-    email:email,
-  },
-});
-
-if(!existingUser){
-  return res.status(404).json({
-    message:"User dosen't exists"
-  })
-}
-
-const updateData:any={};
-if(newmail)updateData.email=newmail;
-if(password)updateData.password=await bcrypt.hash(password,10);
-if(name) updateData.name=name;
-if(role)updateData.role=role;
-updateData.updatedAt=new Date();
-
-const user=await prisma.user.update({
-  where:{
-  email:email
-  },
-  data:updateData,
-})
-
-return res.status(200).json({
-  message:"Updated Data Sucessfully",
-  user:user,
-});
-
-}
-catch(error){
-  res.status(500).json({
-    message:"Internal Server error,or user dosent exists",
-    error:error
-  })
-}
-})
-
-Userapp.get('/courses',authMiddleware,async(req:any,res:any)=>{
   try {
-    const courses=await prisma.course.findMany({
-      where:{teacherId:req.user.id},
-      select:{
-      id:true,
-      title:true,
-      description:true,
-      content:true,
-      teacherId:true,
-      teacher:{
-       select:{
-        name:true,
-        role:true
-       }
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        email: email,
       },
-      updatedAt:true,
-      createdAt:true
+    });
+
+    if (!existingUser) {
+      return res.status(404).json({
+        message: "User dosen't exists"
+      })
+    }
+
+    const updateData: any = {};
+    if (newmail) updateData.email = newmail;
+    if (password) updateData.password = await bcrypt.hash(password, 10);
+    if (name) updateData.name = name;
+    if (role) updateData.role = role;
+    updateData.updatedAt = new Date();
+
+    const user = await prisma.user.update({
+      where: {
+        email: email
+      },
+      data: updateData,
+    })
+
+    return res.status(200).json({
+      message: "Updated Data Sucessfully",
+      user: user,
+    });
+
+  }
+  catch (error) {
+    res.status(500).json({
+      message: "Internal Server error,or user dosent exists",
+      error: error
+    })
+  }
+})
+
+Userapp.get('/courses', authMiddleware, async (req: any, res: any) => {
+  try {
+    const courses = await prisma.course.findMany({
+      where: { teacherId: req.user.id },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        content: true,
+        teacherId: true,
+        teacher: {
+          select: {
+            name: true,
+            role: true
+          }
+        },
+        updatedAt: true,
+        createdAt: true
       }
     });
 
 
-  return  res.status(200).json({
-   courses:courses
-  })
+    return res.status(200).json({
+      courses: courses
+    })
   } catch (error) {
     return res.status(500).json({
-      message:"Internal Server Error",
-      error:error
+      message: "Internal Server Error",
+      error: error
     })
   }
 })
