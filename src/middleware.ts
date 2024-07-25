@@ -1,5 +1,4 @@
 import { Request,Response,NextFunction } from "express";
-import { JWT_SECRET } from "./conf";
 import jwt from 'jsonwebtoken'
 
 export const authMiddleware=(req:any,res:Response,next:NextFunction)=>{
@@ -12,7 +11,7 @@ if(!token){
 }
 
 try{
- const decodedToken:any=jwt.verify(token,JWT_SECRET);
+ const decodedToken:any=jwt.verify(token,process.env.JWT_SECRET || "secret");
  if(!decodedToken || !decodedToken.id){
     return res.status(401).json({
         message:"Token not verified,Please login again"

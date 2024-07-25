@@ -1,7 +1,6 @@
 import express from 'express'
 import cors from 'cors'
 import { Userapp } from './routes/user';
-import { FRONTEND_URL } from './conf';
 import { courseRouter } from './routes/course';
 import cookieParser from 'cookie-parser';
 import { feedbackRouter } from './routes/feedback';
@@ -13,12 +12,12 @@ const PORT=3001;
 const app=express();
 app.use(express.json());
 app.use(cookieParser());
-app.options('*', cors({
-    origin: FRONTEND_URL,
-    credentials: true
-})); 
+console.log(`${process.env.FRONTEND_URL}`);
+app.use(cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:5173", 
+    credentials:true
+}));
 
-console.log(`${FRONTEND_URL}`);
 
 app.get('/',(req,res)=>{
     return res.status(200).json({
