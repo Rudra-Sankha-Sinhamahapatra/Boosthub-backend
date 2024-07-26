@@ -57,7 +57,7 @@ Userapp.post("/signup", async (req, res) => {
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET || "secret");
    
     res.status(200).cookie("token", token, {
-      httpOnly: true,
+      httpOnly: process.env.NODE_ENV==='development'?false : true,
       secure: process.env.NODE_ENV !== "development",
       maxAge: 15 * 60 * 1000,
       sameSite: process.env.NODE_ENV === "development" ? "lax" : "none",
@@ -121,7 +121,7 @@ Userapp.post("/login", async (req, res) => {
     console.log(`${token}`)
 
      res.status(200).cookie("token", token, {
-      httpOnly: true,
+      httpOnly: process.env.NODE_ENV==='development'?false : true,
       secure: process.env.NODE_ENV !== "development",
       maxAge: 15 * 60 * 1000,
       sameSite: process.env.NODE_ENV === "development" ? "lax" : "none",
