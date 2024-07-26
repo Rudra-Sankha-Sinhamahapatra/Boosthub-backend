@@ -59,7 +59,7 @@ Userapp.post("/signup", async (req, res) => {
     res.status(200).cookie("token", token, {
       httpOnly: process.env.NODE_ENV==='development'?false : true,
       secure: process.env.NODE_ENV !== "development",
-      maxAge: 15 * 60 * 1000,
+      maxAge: 30 * 24 * 60 *  60 * 1000,
       sameSite: process.env.NODE_ENV === "development" ? "lax" : "none",
       path: '/'
     }).json({
@@ -123,7 +123,7 @@ Userapp.post("/login", async (req, res) => {
      res.status(200).cookie("token", token, {
       httpOnly: process.env.NODE_ENV==='development'?false : true,
       secure: process.env.NODE_ENV !== "development",
-      maxAge: 15 * 60 * 1000,
+      maxAge: 30 * 24 * 60 *  60 * 1000,
       sameSite: process.env.NODE_ENV === "development" ? "lax" : "none",
       path: '/'
     })
